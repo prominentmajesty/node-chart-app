@@ -15,13 +15,12 @@ io.on('connection', (socket)=>{
 
    socket.on('createNewEmail', (newEmail)=>{
         console.log(newEmail);
+        io.emit('newMessage', {
+            from : newEmail.from,
+            text : newEmail.text,
+            createdAT : new Date().getTime()
+        });
    });
-
-   socket.emit('sendMessage', {
-       from : 'Unknown',
-       text : 'Please Give Us Some More Time',
-       createdAT : '123'
-   })
 
     socket.on('disconnect', ()=>{
         console.log('User was disconnected');
