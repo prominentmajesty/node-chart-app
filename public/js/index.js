@@ -11,41 +11,73 @@ socket.on('connect', function(){
                 console.log(data);
             });*/
 
-            socket.on('welcomeMessage', function(welcome_Msg){
-                var li = $('<li></li>');
-                li.text(`${welcome_Msg.admin} : ${welcome_Msg.text}`);
-                $('#feedBack').append(li);
-            });
-
-            $('#message-form').on('submit', function(e){
-                e.preventDefault();
-        
-                socket.emit('createMessage', {
-                    from : 'User',
-                    text : $('[name=message]').val()
-                }, function(passedData){
-                     console.log(passedData);
-                });
-            });
-        
-            socket.on('response', function(feedBack){
-                console.log(feedBack);
-                var li = $('<li></li>');
-                li.text(`${feedBack.from} : ${feedBack.text}`);
-                $('#feedBack').append(li);
-            });
-
         });
-      
+    
         socket.on('disconnect', function(){
            console.log('Disconnect from The server');
+           
        });
 
-       socket.on('goodByeMessage', function(bye_Msg){
+       socket.on('userText', function(return_Message){
         var li = $('<li></li>');
-        li.text(`${bye_Msg.admin} : ${bye_Msg.text}`);
+        li.text(`${return_Message.from} : ${return_Message.text}`);
         $('#feedBack').append(li);
     });
+
+    socket.on('welcomeMessage', function(welcome_Msg){
+        var li = $('<li></li>');
+        li.text(`${welcome_Msg.admin} : ${welcome_Msg.text}`);
+        $('#feedBack').append(li);
+    });
+
+    $('#message-form').on('submit', function(e){
+        e.preventDefault();
+
+        var messageTextBox = $('[name=message]');
+
+        socket.emit('createMessage', {
+            from : 'User',
+            text : messageTextBox.val()
+        }, function(passedData){
+             messageTextBox.val('');
+        });
+    });
+
+    socket.on('response', function(feedBack){
+        console.log(feedBack);
+        var li = $('<li></li>');
+        li.text(`${feedBack.from} : ${feedBack.text}`);
+        $('#feedBack').append(li);
+    });
+
+        var locationButton = $('#send-location');
+        locationButton.on('click', function(){
+            if(!navigator.geolocation){
+                return alert('Geo-location not supported by your browser');
+            } 
+
+                locationButton.attr('disabled', 'disabled').text('Sending Location...');
+
+                navigator.geolocation.getCurrentPosition(function(position){
+                    locationButton.removeAttr('disabled').text('Send Location');
+                    socket.emit('createLocationMessage', {
+                        latitude : position.coords.latitude,
+                        longitude : position.coords.longitude
+                    });
+                }, function(){
+                    locationButton.removeAttr('disabled').text('Send Location');;
+                    alert('Unable to fetched location.');
+                });
+        });
+
+        socket.on('geolocation_Message', function(return_Goe_Message){
+            var li = $('<li><li>');
+            var a = $('<a target="blank">My current location</a>');
+            li.text(`${return_Goe_Message.from}: `);
+            a.attr('href', return_Goe_Message.url);
+            li.append(a);
+            $('#feedBack').append(li);
+        });
       
       /* socket.on('newMessage', function(data){
         console.log(data);

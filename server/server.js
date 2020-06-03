@@ -14,6 +14,11 @@ app.use(express.static(publicPath));
 io.on('connection', (socket)=>{
     console.log('new User Connected');
 
+    socket.emit('userText', {
+        from : 'Admin',
+        text : 'Welcome To Chart App'
+    });
+
     socket.broadcast.emit('welcomeMessage', {
         admin : 'Admin',
         text : 'New User Joined',
@@ -22,15 +27,23 @@ io.on('connection', (socket)=>{
 
     socket.on('createMessage', function(fromClient, callback){
         console.log(fromClient);
-        socket.broadcast.emit('response', {
+        io.emit('response', {
             from : fromClient.from,
             text : fromClient.text,
             time : new Date().getTime()
         }); 
-        callback('message sent');
+        callback();
     });
+
+    socket.on('createLocationMessage', function(geoLocation_Data){
+        socket.broadcast.emit('geolocation_Message', {
+            from : 'Admin',
+            url : `https://www.google.com/maps?q=${geoLocation_Data.latitude},${geoLocation_Data.longitude}`,
+            createdAt : new Date().getTime()
+        });
+});
    
-    /*socket.emit('replyToClient',/* {
+       /*socket.emit('replyToClient',/* {
         from : 'Admin',
         text : 'welcome to the chart app',
         time : new Date().getTime()
@@ -61,10 +74,14 @@ io.on('connection', (socket)=>{
         //     createdAT : new Date().getTime()
         // });
    });*/
-
-socket.on('disconnect', ()=>{
+   socket.on('disconnect', ()=>{
     console.log('User was disconnected');
+    socket.broadcast.emit('goodByeMessage',{
+        admin : 'Admin',
+        text : 'User Left'
+    
     });
+});
 });
 
 server.listen(port, ()=>{
