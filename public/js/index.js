@@ -44,10 +44,18 @@ socket.on('connect', function(){
     });
 
     socket.on('response', function(feedBack){
-       var formettedTime = moment(feedBack.time).format('h:mm a');
-        var li = $('<li></li>');
-        li.text(`${feedBack.from} ${formettedTime}: ${feedBack.text}`);
-        $('#feedBack').append(li);
+    //    var formettedTime = moment(feedBack.time).format('h:mm a');
+    //     var li = $('<li></li>');
+    //     li.text(`${feedBack.from} ${formettedTime}: ${feedBack.text}`);
+    //     $('#feedBack').append(li);
+    var formettedTime = moment(feedBack.time).format('h:mm a');
+    var template = $('#message-template').html();
+    var html = Mustache.render(template,{
+        from : feedBack.from,
+        text : feedBack.text,
+        time : formettedTime
+    });
+    $('#feedBack').append(html);
     });
 
         var locationButton = $('#send-location');
@@ -71,12 +79,19 @@ socket.on('connect', function(){
             });
 
         socket.on('geolocation_Message', function(return_Goe_Message){
-            var li = $('<li><li>');
-            var a = $('<a target="blank">My current location</a>');
-            li.text(`${return_Goe_Message.from}: `);
-            a.attr('href', return_Goe_Message.url);
-            li.append(a);
-            $('#feedBack').append(li);
+            // var li = $('<li><li>');
+            // var a = $('<a target="blank">My current location</a>');
+            // li.text(`${return_Goe_Message.from}: `);
+            // a.attr('href', return_Goe_Message.url);
+            // li.append(a);
+            var formettedTime = moment(return_Goe_Message.createdAt).format('h:mm a');
+            var template = $('#message-geoLocation').html();
+            var html = Mustache.render(template,{
+                from : return_Goe_Message.from,
+                url : return_Goe_Message.text,
+                createdAt : formettedTime
+            });
+            $('#feedBack').append(html);
         });
       
       /* socket.on('newMessage', function(data){
