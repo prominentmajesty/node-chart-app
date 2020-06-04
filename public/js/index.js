@@ -44,9 +44,9 @@ socket.on('connect', function(){
     });
 
     socket.on('response', function(feedBack){
-        console.log(feedBack);
+       var formettedTime = moment(feedBack.time).format('h:mm a');
         var li = $('<li></li>');
-        li.text(`${feedBack.from} : ${feedBack.text}`);
+        li.text(`${feedBack.from} ${formettedTime}: ${feedBack.text}`);
         $('#feedBack').append(li);
     });
 
@@ -68,7 +68,7 @@ socket.on('connect', function(){
                     locationButton.removeAttr('disabled').text('Send Location');;
                     alert('Unable to fetched location.');
                 });
-        });
+            });
 
         socket.on('geolocation_Message', function(return_Goe_Message){
             var li = $('<li><li>');
