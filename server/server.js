@@ -51,22 +51,33 @@ io.on('connection', (socket)=>{
     // });
 
     socket.on('createMessage', function(fromClient, callback){
-        console.log(fromClient);
-        io.emit('response', {
-            from : fromClient.from,
-            text : fromClient.text,
-            time : new Date().getTime()
-        }); 
+        var user = users.getUser(socket.id);
+
+        if(user && isRealString(fromClient.text)){
+
+            io.to(user.room).emit('response', {
+                from : user.name,
+                text : fromClient.text,
+                time : new Date().getTime()
+            });
+
+        } 
         callback();
     });
 
     socket.on('createLocationMessage', function(geoLocation_Data){
-        io.emit('geolocation_Message', {
-            from : 'Admin',
-            url : `https://www.google.com/maps?q=${geoLocation_Data.latitude},${geoLocation_Data.longitude}`,
-            createdAt : new Date().getTime()
-        });
-});
+        var user = users.getUser(socket.id);
+        if(user){
+
+            io.to(user.room).emit('geolocation_Message', {
+                from : user.name,
+                url : `https://www.google.com/maps?q=${geoLocation_Data.latitude},${geoLocation_Data.longitude}`,
+                createdAt : new Date().getTime()
+            });
+
+        }
+       
+    });
    
        /*socket.emit('replyToClient',/* {
         from : 'Admin',
