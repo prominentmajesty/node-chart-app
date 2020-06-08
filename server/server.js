@@ -4,27 +4,51 @@ const express = require('express');
 const socketIO = require('socket.io');
 const {generateMessage} = require('./utils/message');
 const moment = require('moment');
-
+const {isRealString} = require('./utils/validation');
+const {Users} = require('./utils/users');
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
 var app  = express();
 var server = http.createServer(app);
 var io = socketIO(server);
+var users = new Users();
+
 app.use(express.static(publicPath));
 
 io.on('connection', (socket)=>{
     console.log('new User Connected');
 
-    socket.emit('userText', {
-        from : 'Admin',
-        text : 'Welcome To Chart App'
+    // socket.emit('userText', {
+    //     from : 'Admin',
+    //     text : 'Welcome To Chart App'
+    // });
+
+    socket.on('join', (params, callback)=>{
+        if(!isRealString(params.name) || !isRealString(params.room)){
+           return callback('name and room name are required.');
+        }
+
+        socket.join(params.room);
+        users.removeUser(socket.id);
+        users.addUser(socket.id, params.name, params.room);
+        //socket.leave('the office fan') ---> this is used to leave the room when eve you want to.
+        //io.emit -> io.to('the office fan').emit ---> this emit to every single user that joined a group.
+        //socket.broadcast.emit -> socket.broadcast.to('the office fan').emit ---> this emit to every single user that joined in a group apart from the current sender or user.
+        //socket.emit('office fan') this emit to one very particular person. 
+        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
+        socket.emit('getWelcomMessage',{
+            from : `${params.name} welcome to chat app`,
+            time : new Date().getTime()
+        });
+        socket.broadcast.to(params.room).emit('newJoineUserAlert', generateMessage('Admin', `${params.name} has joined.`));
+        callback();
     });
 
-    socket.broadcast.emit('welcomeMessage', {
-        admin : 'Admin',
-        text : 'New User Joined',
-        time : new Date().getTime()
-    });
+    // socket.broadcast.emit('welcomeMessage', {
+    //     admin : 'Admin',
+    //     text : 'New User Joined',
+    //     time : new Date().getTime()
+    // });
 
     socket.on('createMessage', function(fromClient, callback){
         console.log(fromClient);
@@ -37,7 +61,7 @@ io.on('connection', (socket)=>{
     });
 
     socket.on('createLocationMessage', function(geoLocation_Data){
-        socket.broadcast.emit('geolocation_Message', {
+        io.emit('geolocation_Message', {
             from : 'Admin',
             url : `https://www.google.com/maps?q=${geoLocation_Data.latitude},${geoLocation_Data.longitude}`,
             createdAt : new Date().getTime()
@@ -66,7 +90,7 @@ io.on('connection', (socket)=>{
             from : newEmail.from,
             text : newEmail.text,
             createdAT : new Date().getTime()
-        }
+        } 
         generateMessage(newEmail.from, newEmail.text)
         );
         // socket.broadcast.emit('newMessage',{
@@ -77,11 +101,12 @@ io.on('connection', (socket)=>{
    });*/
    socket.on('disconnect', ()=>{
     console.log('User was disconnected');
-    socket.broadcast.emit('goodByeMessage',{
-        admin : 'Admin',
-        text : 'User Left'
-    
-    });
+    var user = users.removeUser(socket.id);
+
+    if(user){
+        io.to(user.room).emit('updateUserList',users.getUserList(user.room));
+        io.to(user.room).emit('getMessage', generateMessage('Admin', `${user.name} has left`));
+    }
 });
 });
 
